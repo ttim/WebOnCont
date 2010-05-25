@@ -1,0 +1,18 @@
+WebOnCont continuation passing style webframework
+WebOnCont - это простой каркас для веб-приложений на языке F#. Веб-приложения создаются по технологии "продолжений" - при реализации приложения мы не замечаем его асинхронности и клиент-серверного взаимодействия и пишем просто последовательный код.
+Основной движущей частью WebOnCont является continuation-io монада, её реализация лежит в файле http_continuation.fs.
+Для создания собственного приложения вам нужно скомпилировать его файл с http_continuation.fs и server.fs, а также реализовать хоть один handler, где handler это переменная типа httpContinuation.
+WebOnCont предоставляет для работы два основных метода - request и getSession.
+Метод request принимает шаблон для отображения, делает запрос к пользователю, и возвращает запрос пользователя к веб-серверу в ответ. Пример использования:
+let! result = (request someTemplate) in
+return result.QueryParams.["someKey"]
+Напомним - всё происходит в httpContinuation computanional expression.
+Шаблоном, передаваемым в request, является функция из string -> string, где первый string является ключом продолжения, его вы должны указать во всех ссылках/формах на следующие страницы.
+Метод getSession устроен проще - он всего лишь возвращает идентификатор текущей сессии. Реализован он тоже в виде string httpContinuation. Пример использования:
+let! currentSession = getSession in
+return currentSession
+Для собственно запуска хендлера служит следующая функция:
+mw.server.startServer someWebPrefixHere handlerHere
+
+Пример работающего приложения можно посмотреть в файле shop.fs - это интернет магазин с двумя товарами и авторизацией по имени, которая, тем не менее, авторизует всех.
+Пример компилируется командом ./compile.bat в linux, либо compile.bat в windows.
