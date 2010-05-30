@@ -53,22 +53,23 @@ let addIdToBasket id = httpContinuation {
   return ()
 }
 
-let printBasket afterCont = httpContinuation {
+(* handlers *)
+registerHandler "printBasket" (httpContinuation {
   let! idsInBasket = getIdsInBasket
   let! result = request (basketTemplate idsInBasket) 
-  let! nextResult = afterCont
-  return ()
-}
+  do! processHandler "main"
+})
 
-let rec main = httpContinuation {
+registerHandler "main" (httpContinuation {
   let! result = request mainTemplate
   let idToBuy = result.QueryString.["id"]
   let! name = auth
-  let! buyBook = (addIdToBasket idToBuy)
+  do! (addIdToBasket idToBuy)
   let! nextGoResult = request (buyTemplate idToBuy)
   let nextAction = nextGoResult.QueryString.["action"]
-  let! nextResult = (if nextAction = "basket" then printBasket main else main)
-  return ()
-}
+  if nextAction = "basket" 
+    then do! processHandler "printBasket" 
+    else do! processHandler "main"
+})
 
-mw.server.startServer "http://localhost:7777/mw/" main
+mw.server.startServer "http://localhost:7777/mw/" "main"

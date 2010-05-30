@@ -43,6 +43,15 @@ let getSession : (string HttpContinuation) =
 let callbackForNewClient (handler : 'a HttpContinuation) = 
   registerCallback (fun (a, b) -> (handler (b, (fun c -> () )))) null
 
+(* methods for handlers register *)
+let mutable handlers = Map [("", httpContinuation { return () } )]
+
+let registerHandler (name : string) (handler : unit HttpContinuation) = 
+  handlers <- handlers.Add (name, handler)
+let processHandler handlerName = httpContinuation {
+  do! handlers.[handlerName]
+}
+
 (* http handler *) 
 let serviceClient (handler : 'a HttpContinuation) (client: HttpListenerContext) =
   let key = client.Request.QueryString.["key"]
@@ -54,7 +63,8 @@ let serviceClient (handler : 'a HttpContinuation) (client: HttpListenerContext) 
   client.Response.Close()
 
 (* http listener *)
-let startServer serverPrefix handler = 
+let startServer serverPrefix handlerName =
+  let handler = handlers.[handlerName]
   let listener = new HttpListener()
   listener.Prefixes.Add (serverPrefix);
   listener.Start();
